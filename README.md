@@ -1,0 +1,4 @@
+## USAGE
+```
+./tract.py INFILE_NAME SHAPEFILE_NAME
+```
