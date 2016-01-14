@@ -10,7 +10,7 @@ tract.py assumes that INFILE_NAME is a JSON file and that there are two fields i
 
 ### INSTALLATION
 
-#Ubuntu
+##### Ubuntu
 You must make sure that you have libgdal-dev packages installed on you system.
 
 Easiest way to install python packages is to install the PPA:
