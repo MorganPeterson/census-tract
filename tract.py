@@ -3,6 +3,7 @@
 
 from osgeo import ogr, osr
 
+import ijson
 import json
 import shapefile
 import sys
@@ -22,8 +23,8 @@ else:
 
 field_nmes     = []
 g_field_count  = 12 # hard coded and should be dynamic
-lat_name       = 'latitude'
-lon_name       = 'longitude'
+lat_name       = 'latitude_wgs84'
+lon_name       = 'longitude_wgs84'
 out_json_obj   = 'census_tract'
 
 
@@ -50,19 +51,19 @@ def get_census_tract(polylayer, longitude, latitude):
     """ takes in all layers and searches through them looking for the tract
     that matches our longitude and latitude values. If a tract is not found,
     then it returns an object with null fields"""
+    try:
+        pnt_ref       = osr.SpatialReference()
+        pnt_ref.ImportFromEPSG(4326)
 
-    pnt_ref       = osr.SpatialReference()
-    pnt_ref.ImportFromEPSG(4326)
-
-    geo_ref       = polylayer.GetSpatialRef()
-    ctran         = osr.CoordinateTransformation(pnt_ref, geo_ref)
-    [lon, lat, z] = ctran.TransformPoint(longitude, latitude)
-    point         = ogr.Geometry(ogr.wkbPoint)
-
-    point.SetPoint_2D(int(z), lon, lat)
-    polylayer.SetSpatialFilter(point)
-
-    p = polylayer.GetNextFeature()
+        geo_ref       = polylayer.GetSpatialRef()
+        ctran         = osr.CoordinateTransformation(pnt_ref, geo_ref)
+        [lon, lat, z] = ctran.TransformPoint(longitude, latitude)
+        point         = ogr.Geometry(ogr.wkbPoint)
+        point.SetPoint_2D(0, lon, lat)
+        polylayer.SetSpatialFilter(point)
+        p = polylayer.GetNextFeature()
+    except:
+        p = None
 
     if p is None:
         # if p is None then there was a fault in the longitude and/or
@@ -97,21 +98,31 @@ g_field_count = polydef.GetFieldCount()
 for i in range(g_field_count):
     field_nmes.append(polydef.GetFieldDefn(i).GetName()[:-2])
 
-with open(in_file,'rb') as inf:
-    # size of file determined by memory. Need to re-write.
-    x = json.load(inf)
-
 parent_field = get_parent_field(head_obj)
 
-for ele in x[parent_field]:
-    # lon/lat to be passed to our census tract function
-    our_lon = float(ele[lon_name])
-    our_lat = float(ele[lat_name])
+with open(in_file,'rb') as inf:
+    # size of file determined by memory. Need to re-write.
+    #x = json.load(inf)
 
-    # append our census tract object to our JSON object
-    ele[out_json_obj] = get_census_tract(layers, our_lon, our_lat)
+    outf = open(out_file, 'a')
+    if outf == None:
+        print 'unable to open write file: {}'.format(out_file)
+        sys.exit(1)
 
-with open(out_file, 'wb') as outf:
-    # size of output determined by memory. Need to re-write.
-    json.dump(x, outf)
+    # start getting our items from the file
+    dir_item = '{}.item'.format(parent_field)
+    for ele in ijson.items(inf,dir_item):
+        # lon/lat to be passed to our census tract function
+        try:
+            our_lon = float(ele[lon_name])
+            our_lat = float(ele[lat_name])
+        except:
+            our_lon = ele[lon_name]
+            our_lat = ele[lat_name]
+        # append our census tract object to our JSON object
+        ele[out_json_obj] = get_census_tract(layers, our_lon, our_lat)
+        json.dump(ele, outf)
+        outf.write('\n')
+
+outf.close()
 
