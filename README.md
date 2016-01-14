@@ -8,13 +8,13 @@ Aggregate JSON objects containing lon/lat and census tract shapefile data
 ```
 tract.py assumes that INFILE_NAME is a JSON file and that there are two fields in each object named longitude and latitude. If the longitude and latitude fields are named something else, you must change the variables lon_name and lat_name in tract.py to the your lon/lat field names. 
 
-### INSTALLATION
+### Dependencies
 
 ##### Ubuntu
 You must make sure that you have libgdal-dev packages installed on you system.
 
 Easiest way to install python packages is to install the PPA:
-```bash
+```sh
 $ sudo apt-add-repository ppa:ubuntugis/ubuntugis-unstable
 
 $ sudo apt-get update
