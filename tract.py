@@ -5,6 +5,7 @@ from osgeo import ogr, osr
 
 import ijson
 import json
+import os
 import shapefile
 import sys
 
@@ -22,9 +23,9 @@ else:
 
 
 field_nmes     = []
-g_field_count  = 12 # hard coded and should be dynamic
-lat_name       = 'latitude_wgs84'
-lon_name       = 'longitude_wgs84'
+g_field_count  = 12
+lat_name       = 'latitude'
+lon_name       = 'longitude'
 out_json_obj   = 'census_tract'
 
 
@@ -43,7 +44,6 @@ def fmt_return_json(field_names, field_values, fc):
                 field_nmes[fc],fv))
 
     json_comp = "{"+x.join(seq)+"}"
-    print json_comp
     return json.loads(json_comp)
 
 
@@ -100,10 +100,9 @@ for i in range(g_field_count):
 
 parent_field = get_parent_field(head_obj)
 
-with open(in_file,'rb') as inf:
-    # size of file determined by memory. Need to re-write.
-    #x = json.load(inf)
+in_size  = os.stat(in_file).st_size
 
+with open(in_file,'rb') as inf:
     outf = open(out_file, 'a')
     if outf == None:
         print 'unable to open write file: {}'.format(out_file)
@@ -111,6 +110,10 @@ with open(in_file,'rb') as inf:
 
     # start getting our items from the file
     dir_item = '{}.item'.format(parent_field)
+
+    # this print is only here to make the console output look cleaner
+    print '\n'
+
     for ele in ijson.items(inf,dir_item):
         # lon/lat to be passed to our census tract function
         try:
@@ -124,5 +127,17 @@ with open(in_file,'rb') as inf:
         json.dump(ele, outf)
         outf.write('\n')
 
+        # all for the console progress tracker
+        out_size = float(os.stat(out_file).st_size)
+        sys.stdout.write(\
+                '\rIn: {0}B - Out: {1}B - {2}%'.format(\
+                in_size, out_size, round(out_size/in_size*100)))
+        sys.stdout.flush()
+
+# erase all console output
+sys.stdout.write('\r')
+sys.stdout.flush()
+
+#close write file
 outf.close()
 
