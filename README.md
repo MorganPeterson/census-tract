@@ -1,6 +1,6 @@
 # tract.py
 
-Aggragate JSON objects containing lon/lat and census tract shapefile data
+Aggregate JSON objects containing lon/lat and census tract shapefile data
 
 ### USAGE
 ```
