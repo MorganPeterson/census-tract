@@ -1,30 +1,50 @@
 #!/usr/bin/env python
-
 # tract.py
 
 from osgeo import ogr, osr
+
 import json
 import shapefile
 import sys
 
 if len(sys.argv) != 3:
-    print '{0}'.format('USAGE: tract.py INFILE_NAME SHAPEFILE_NAME')
-    sys.exit(1)
+    print 'USAGE: {0}'.format('tract.py INFILE_NAME SHAPEFILE_NAME')
+    print '{0}... {1}.json and {1}.shp\n'.format('Assuming defaults','index')
+    head_obj   = 'index'
+    shape_obj  = 'index'
 else:
-    head_obj  = '{0}'.format(sys.argv[1])
-    shape_obj = '{0}'.format(sys.argv[2])
+    head_obj   = '{0}'.format(sys.argv[1])
+    shape_obj  = '{0}'.format(sys.argv[2])
+    in_file    = '{0}'.format(head_obj)
+    out_file   = '{0}.tract.json'.format(head_obj)
+    shape_file = '{0}'.format(shape_obj)
 
-our_json_obj  = 'census_tract'
 
-in_file       = 'formatted-data/{0}.json'.format(head_obj)
-out_file      = 'formatted-data/{0}-tract.json'.format(head_obj)
-shape_file    = '{0}/{0}.shp'.format(shape_obj)
+field_nmes     = []
+g_field_count  = 12 # hard coded and should be dynamic
+lat_name       = 'latitude'
+lon_name       = 'longitude'
+out_json_obj   = 'census_tract'
 
-lat_name      = 'latitude'
-lon_name      = 'longitude'
 
-field_nmes    = []
-g_field_count = 12
+def fmt_return_json(field_names, field_values, fc):
+    """ Format all the shapefile values into a final JSON object that will
+    attached to the object that came in. """
+    x   = ','
+    seq = []
+    for fc in range(fc):
+        if field_values is None:
+            fv = 'null'
+        else:
+            fv = field_values.GetFieldAsString(fc)
+
+        seq.append('"{0}":"{1}"'.format(\
+                field_nmes[fc],fv))
+
+    json_comp = "{"+x.join(seq)+"}"
+    print json_comp
+    return json.loads(json_comp)
+
 
 def get_census_tract(polylayer, longitude, latitude):
     """ takes in all layers and searches through them looking for the tract
@@ -47,48 +67,49 @@ def get_census_tract(polylayer, longitude, latitude):
     if p is None:
         # if p is None then there was a fault in the longitude and/or
         # latitude values and we eturn an object with field values of null
-        x   = ','
-        seq = []
-        for field_count in range(g_field_count):
-            seq.append('"{0}":null'.format(field_nmes[field_count]))
-        pops = "{"+x.join(seq)+"}"
-        return json.loads(pops)
+        return fmt_return_json(field_nmes, None, g_field_count)
 
     if point.Within(p.GetGeometryRef()):
         # if we do have longitude and latitude then we loop through the
         # layers fields and make and object that we then return
-        x = ','
-        seq = []
-        for field_count in range(p.GetFieldCount()):
-            seq.append('"{0}":"{1}"'.format(\
-                    field_nmes[field_count],\
-                    p.GetFieldAsString(field_count)))
-        pops = "{"+x.join(seq)+"}"
-        return json.loads(pops)
+        return fmt_return_json(field_nmes, p, g_field_count)
+
+
+def get_parent_field(our_head_object):
+    """ head_object is also the name of the parent field. We only nead the
+    actual file name, though. Not the whole path. """
+    temp = our_head_object.split('/')[-1]
+    robj = temp.split('.')[-2]
+    return robj
+
 
 driver       = ogr.GetDriverByName('ESRI Shapefile')
 sf           = driver.Open(shape_file, 0)
-layers       = sf.GetLayer()
-
 if sf is None:
     print "Could not open {0}".format(shape_file)
     sys.exit(1)
 
-polydef = layers.GetLayerDefn()
-for i in range(polydef.GetFieldCount()):
+
+layers        = sf.GetLayer()
+polydef       = layers.GetLayerDefn()
+g_field_count = polydef.GetFieldCount()
+
+for i in range(g_field_count):
     field_nmes.append(polydef.GetFieldDefn(i).GetName()[:-2])
 
 with open(in_file,'rb') as inf:
     # size of file determined by memory. Need to re-write.
     x = json.load(inf)
 
-for ele in x[head_obj]:
+parent_field = get_parent_field(head_obj)
+
+for ele in x[parent_field]:
     # lon/lat to be passed to our census tract function
     our_lon = float(ele[lon_name])
     our_lat = float(ele[lat_name])
 
     # append our census tract object to our JSON object
-    ele[our_json_obj] = get_census_tract(layers, our_lon, our_lat)
+    ele[out_json_obj] = get_census_tract(layers, our_lon, our_lat)
 
 with open(out_file, 'wb') as outf:
     # size of output determined by memory. Need to re-write.
