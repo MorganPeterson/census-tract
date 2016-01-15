@@ -17,17 +17,17 @@ You will need to have python-gdal, shapefile, and ijson modules installed.
 
 Easiest way to install python-gdal package is to install the PPA:
 ``` bash
-$ sudo apt-add-repository ppa:ubuntugis/ubuntugis-unstable
+# sudo apt-add-repository ppa:ubuntugis/ubuntugis-unstable
 
-$ sudo apt-get update
+# sudo apt-get update
 
-$ sudo apt-get install python-gdal
+# sudo apt-get install python-gdal
 ```
 Shapefile and ijson can be installed using pip.
 ``` bash
-sudo pip install shapefile
+$ pip install shapefile
 
-sudo pip install ijson
+$ pip install ijson
 ```
 
 #### INFILE_NAME Format
