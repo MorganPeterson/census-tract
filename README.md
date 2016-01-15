@@ -25,9 +25,9 @@ $ sudo apt-get install python-gdal
 ```
 Shapefile and ijson can be installed using pip.
 ``` bash
-$ pip install shapefile
+$ pip install --user shapefile
 
-$ pip install ijson
+$ pip install --user ijson
 ```
 
 #### INFILE_NAME Format
