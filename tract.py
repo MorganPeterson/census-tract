@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # tract.py
 
 from osgeo import ogr, osr, gdal
@@ -6,12 +6,11 @@ from osgeo import ogr, osr, gdal
 import ijson
 import json
 import os
-import shapefile
 import sys
 
 if len(sys.argv) != 3:
-    print 'USAGE: {0}'.format('tract.py INFILE_NAME SHAPEFILE_NAME')
-    print '{0}... {1}.json and {1}.shp\n'.format('Assuming defaults','index')
+    print('USAGE: {0}'.format('tract.py INFILE_NAME SHAPEFILE_NAME'))
+    print('{0}... {1}.json and {1}.shp\n'.format('Assuming defaults','index'))
     head_obj   = 'index'
     shape_obj  = 'index'
 else:
@@ -42,7 +41,7 @@ def fmt_return_json(field_values, fc):
         x = '"{0}":"{1}"'.format(field_nmes[ele],fv)
         return x
 
-    seq = [builder(fc) for fc in xrange(fc)]
+    seq = [builder(fc) for fc in range(fc)]
     return json.loads("{{{0}}}\n".format(x.join(seq)))
 
 
@@ -83,7 +82,7 @@ def get_parent_field(our_head_object):
 driver       = ogr.GetDriverByName('ESRI Shapefile')
 sf           = driver.Open(shape_file, 0)
 if sf is None:
-    print "Could not open {0}".format(shape_file)
+    print("Could not open {0}".format(shape_file))
     sys.exit(1)
 
 # set all osgeo.gdal options
@@ -94,7 +93,7 @@ pnt_ref       = osr.SpatialReference()
 pnt_ref.ImportFromEPSG(4326)
 
 field_nmes = \
-        [polydef.GetFieldDefn(x).GetName()[:-2] for x in xrange(g_field_count)]
+        [polydef.GetFieldDefn(x).GetName()[:-2] for x in range(g_field_count)]
 
 parent_field = get_parent_field(head_obj)
 
@@ -103,14 +102,14 @@ in_size  = os.stat(in_file).st_size
 with open(in_file,'rb') as inf:
     outf = open(out_file, 'a')
     if outf == None:
-        print 'unable to open write file: {}'.format(out_file)
+        print('unable to open write file: {}'.format(out_file))
         sys.exit(1)
 
     # start getting our items from the file
     dir_item = '{}.item'.format(parent_field)
 
     # this print is only here to make the console output look cleaner
-    print '\n'
+    print('\n')
 
     for ele in ijson.items(inf,dir_item):
         # lon/lat to be passed to our census tract function
